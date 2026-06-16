@@ -1,4 +1,3 @@
-
 pipeline {
     agent any 
     environment {
@@ -12,31 +11,27 @@ pipeline {
                 url: 'https://github.com/umapathy1729/Microservice-Project.git'
             }
         }
-        stage('Deploy to EC2 via Docker Compose') {
+        stage('Deploy to EC2') {
             steps {
-                sshagent(['ec2_key2']) {
+                sshagent(['ec2_key']) {
                     sh '''
                     ssh -o StrictHostKeyChecking=no ubuntu@${EC2_IP} '
                     set -e
-                    
-                    # 1. Navigate to the project directory or clone if it doesn\\'t exist
-                    if [ -d "Microservice-Project" ]; then
-                        cd Microservice-Project
-                        git pull origin main
-                    else
-                        git clone git@github.com:umapathy1729/Microservice-Project.git
-                        cd Microservice-Project
-                    fi
- 
-                    # 2. Bring down existing containers, images, and volumes cleanly
-                    docker compose down --rmi all --volumes || true
- 
-                    # 3. Rebuild images and start the services in detached mode
+                    rm -rf Microservice-Project
+                    git clone git@github.com:umapathy1729/Microservice-Project.git
+
+                    cd Microservice-Project
+                    git checkout main
+                    git pull origin main
+
+                    docker system prune -f &&
+                    docker compose down &&
                     docker compose up -d --build
+
                     '
                     '''
                 }
             }
         }
     }
-} 
+}
